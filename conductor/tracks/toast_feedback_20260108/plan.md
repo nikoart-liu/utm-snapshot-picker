@@ -12,7 +12,7 @@
 - [x] Task: 在 `delete_snapshot` 和 `revert_snapshot` 的操作链中集成成功 Toast
 - [x] Task: Conductor - User Manual Verification 'Phase 2: 文案优化与交互集成' (Protocol in workflow.md)
 
-## Phase 3: 最终打磨与安全检查 [checkpoint: 109c8e7]
+## Phase 3: 最终打磨与安全检查 [checkpoint: 89ff362]
 - [x] Task: 优化 Toast 的进入/退出动画
 - [x] Task: 验证在快速多次操作下 Toast 的显示行为
 - [x] Task: Conductor - User Manual Verification 'Phase 3: 最终打磨与安全检查' (Protocol in workflow.md)
