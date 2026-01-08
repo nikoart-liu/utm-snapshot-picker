@@ -5,6 +5,7 @@ import { UtmVirtualMachine, ImageInfo, Snapshot } from "./types";
 import { CreateSnapshotModal } from "./CreateSnapshotModal";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Toast } from "./Toast";
+import { getHeadSnapshotId, setHeadSnapshotId } from "./store";
 
 function App() {
   const [vms, setVms] = useState<UtmVirtualMachine[]>([]);
@@ -18,8 +19,9 @@ function App() {
   const [snapshotToDelete, setSnapshotToDelete] = useState<Snapshot | null>(null);
   const [snapshotToRevert, setSnapshotToRevert] = useState<Snapshot | null>(null);
   
-  // Selection
+  // Selection & Head Tracking
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
+  const [headSnapshotId, setHeadSnapshotIdState] = useState<string | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; isVisible: boolean; type?: 'success' | 'error' }>({
@@ -41,7 +43,6 @@ function App() {
       setLoading(true);
       const result = await invoke<UtmVirtualMachine[]>("scan_vms");
       setVms(result);
-      // Update selected VM status if it exists in the list
       if (selectedVm) {
         const updatedSelected = result.find(v => v.path === selectedVm.path);
         if (updatedSelected) {
@@ -60,17 +61,27 @@ function App() {
     setSelectedVm(vm);
     setSnapshots(null);
     setSelectedSnapshotId(null);
+    setHeadSnapshotIdState(null); // Reset head state while loading
+    
+    // Load persisted head ID
+    const savedHeadId = await getHeadSnapshotId(vm.path);
+    if (savedHeadId) {
+      setHeadSnapshotIdState(savedHeadId);
+    }
+
     refreshSnapshots(vm.path);
   }
 
-  async function refreshSnapshots(path: string) {
+  async function refreshSnapshots(path: string): Promise<ImageInfo | null> {
     try {
       setLoading(true);
       const result = await invoke<ImageInfo>("get_snapshots", { vmPath: path });
       setSnapshots(result);
       setError(null);
+      return result;
     } catch (e) {
       setError(String(e));
+      return null;
     } finally {
       setLoading(false);
     }
@@ -80,7 +91,7 @@ function App() {
     const errorMsg = String(e);
     if (errorMsg.includes("Virtual machine is currently running")) {
       showToast("Operation blocked: VM is running. Please stop it.", "error");
-      await loadVms(); // Refresh VM list to update status
+      await loadVms();
     } else {
       setError(errorMsg);
     }
@@ -91,7 +102,18 @@ function App() {
     try {
       await invoke("create_snapshot", { vmPath: selectedVm.path, name });
       showToast(`Snapshot "${name}" created successfully.`);
-      await refreshSnapshots(selectedVm.path);
+      
+      const newInfo = await refreshSnapshots(selectedVm.path);
+      
+      // Find the new snapshot to set as HEAD
+      if (newInfo && newInfo.snapshots) {
+        // Assuming the new snapshot is the one with the matching name. 
+        const newSnap = newInfo.snapshots.find(s => s.name === name);
+        if (newSnap) {
+          setHeadSnapshotIdState(newSnap.id);
+          await setHeadSnapshotId(selectedVm.path, newSnap.id);
+        }
+      }
     } catch (e) {
       await handleError(e);
     }
@@ -103,6 +125,13 @@ function App() {
       setLoading(true);
       await invoke("delete_snapshot", { vmPath: selectedVm.path, name: snapshotToDelete.name });
       showToast(`Snapshot deleted successfully.`);
+      
+      // If we deleted the HEAD, clear the HEAD state
+      if (snapshotToDelete.id === headSnapshotId) {
+        setHeadSnapshotIdState(null);
+        await setHeadSnapshotId(selectedVm.path, "");
+      }
+
       setSnapshotToDelete(null);
       setSelectedSnapshotId(null);
       await refreshSnapshots(selectedVm.path);
@@ -119,6 +148,11 @@ function App() {
       setLoading(true);
       await invoke("revert_snapshot", { vmPath: selectedVm.path, name: snapshotToRevert.name });
       showToast(`Reverted to snapshot successfully.`);
+      
+      // Update HEAD to the reverted snapshot
+      setHeadSnapshotIdState(snapshotToRevert.id);
+      await setHeadSnapshotId(selectedVm.path, snapshotToRevert.id);
+
       setSnapshotToRevert(null);
       await refreshSnapshots(selectedVm.path);
     } catch (e) {
@@ -248,8 +282,16 @@ function App() {
                              >
                                <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
                                  <div className="flex items-center gap-3">
-                                   <div className={`h-2 w-2 rounded-full transition-opacity ${selectedSnapshotId === snap.id ? "bg-blue-500 opacity-100" : "bg-gray-300 opacity-0"}`}></div>
-                                   <span className="font-medium">{snap.name}</span>
+                                   {/* HEAD Indicator (Phase 3) */}
+                                   {snap.id === headSnapshotId ? (
+                                      <div className="flex items-center justify-center h-5 w-5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-full" title="Current State">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                      </div>
+                                   ) : (
+                                      <div className={`h-2 w-2 rounded-full ml-1.5 transition-opacity ${selectedSnapshotId === snap.id ? "bg-blue-500 opacity-100" : "bg-gray-300 opacity-0"}`}></div>
+                                   )}
+                                   <span className={`font-medium ${snap.id === headSnapshotId ? "text-blue-600 dark:text-blue-400" : ""}`}>{snap.name}</span>
+                                   {snap.id === headSnapshotId && <span className="text-[10px] bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">HEAD</span>}
                                  </div>
                                </td>
                                <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5 text-gray-500">
