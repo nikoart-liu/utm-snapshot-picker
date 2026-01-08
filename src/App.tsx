@@ -30,9 +30,13 @@ function App() {
   async function selectVm(vm: UtmVirtualMachine) {
     setSelectedVm(vm);
     setSnapshots(null);
+    refreshSnapshots(vm.path);
+  }
+
+  async function refreshSnapshots(path: string) {
     try {
       setLoading(true);
-      const result = await invoke<ImageInfo>("get_snapshots", { vmPath: vm.path });
+      const result = await invoke<ImageInfo>("get_snapshots", { vmPath: path });
       setSnapshots(result);
       setError(null);
     } catch (e) {
@@ -43,76 +47,140 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans">
+    <div className="flex h-screen bg-gray-100 dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200 font-sans overflow-hidden">
       {/* Sidebar: VM List */}
-      <div className="w-1/3 border-r border-gray-300 dark:border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-300 dark:border-gray-700 bg-gray-200 dark:bg-gray-800">
-          <h2 className="font-semibold text-sm uppercase tracking-wide">Virtual Machines</h2>
+      <div className="w-64 border-r border-gray-300 dark:border-white/10 flex flex-col bg-gray-200/50 dark:bg-black/20 backdrop-blur-xl">
+        <div className="p-4 pt-10 border-b border-gray-300 dark:border-white/10 flex justify-between items-center">
+          <h2 className="font-bold text-xs text-gray-500 uppercase tracking-widest">UTM Machines</h2>
+          <button 
+            onClick={loadVms}
+            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-gray-500"
+            title="Refresh list"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {vms.map((vm) => (
             <div
               key={vm.path}
               onClick={() => selectVm(vm)}
-              className={`p-3 cursor-pointer text-sm truncate ${
+              className={`px-3 py-1.5 cursor-default text-[13px] rounded-md flex items-center justify-between transition-all ${
                 selectedVm?.path === vm.path
-                  ? "bg-blue-500 text-white"
-                  : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : "hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
-              {vm.name}
+              <span className="truncate flex-1">{vm.name}</span>
+              {vm.is_running && (
+                <div className="flex items-center">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
+                </div>
+              )}
             </div>
           ))}
           {vms.length === 0 && !loading && (
-            <div className="p-4 text-gray-500 text-sm italic">No VMs found.</div>
+            <div className="p-4 text-gray-400 text-xs text-center italic mt-10">No VMs detected in standard paths</div>
           )}
         </div>
       </div>
 
       {/* Main Content: Snapshots */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white dark:bg-[#1e1e1e]">
         {selectedVm ? (
           <>
-            <div className="p-4 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex justify-between items-center">
-              <h1 className="font-bold text-lg">{selectedVm.name}</h1>
-              <span className="text-xs text-gray-500 font-mono">{selectedVm.path}</span>
+            <div className="h-14 px-6 border-b border-gray-300 dark:border-white/10 flex justify-between items-center bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-md z-10">
+              <div className="flex flex-col">
+                <h1 className="font-bold text-sm">{selectedVm.name}</h1>
+                <span className="text-[10px] text-gray-400 font-mono truncate max-w-xs">{selectedVm.path}</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => refreshSnapshots(selectedVm.path)}
+                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 rounded-md transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  Refresh
+                </button>
+              </div>
             </div>
+
             <div className="p-6 flex-1 overflow-y-auto">
               {error && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                  {error}
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-[13px] flex items-start gap-3">
+                  <svg className="shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <div>
+                    <p className="font-semibold">Error retrieving snapshots</p>
+                    <p className="opacity-80 mt-1">{error}</p>
+                  </div>
                 </div>
               )}
               
-              {loading && <div className="text-sm text-gray-500">Loading...</div>}
+              {loading && !snapshots && <div className="text-sm text-gray-400 flex items-center gap-2 animate-pulse"><div className="h-2 w-2 bg-gray-400 rounded-full"></div>Loading details...</div>}
 
               {snapshots && (
-                <div>
-                   <h3 className="text-md font-semibold mb-2">Snapshots</h3>
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                   <div className="flex justify-between items-end mb-4">
+                     <h3 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Snapshots History</h3>
+                     <span className="text-[11px] text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{snapshots.snapshots?.length || 0} Total</span>
+                   </div>
+
                    {!snapshots.snapshots || snapshots.snapshots.length === 0 ? (
-                     <div className="text-gray-500 text-sm">No snapshots found for this VM.</div>
+                     <div className="py-12 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 dark:border-white/5 rounded-xl">
+                       <svg className="mb-2 opacity-20" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                       <p className="text-sm">No snapshots found for this machine</p>
+                     </div>
                    ) : (
-                     <ul className="space-y-2">
-                       {snapshots.snapshots.map((snap) => (
-                         <li key={snap.id} className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm">
-                           <div className="flex justify-between items-center">
-                             <span className="font-medium">{snap.name}</span>
-                             <span className="text-xs text-gray-500">ID: {snap.id}</span>
-                           </div>
-                           <div className="text-xs text-gray-400 mt-1">
-                             Date: {new Date(snap["date-sec"] * 1000).toLocaleString()}
-                           </div>
-                         </li>
-                       ))}
-                     </ul>
+                     <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                       <table className="w-full text-left text-[13px]">
+                         <thead>
+                           <tr className="bg-gray-50 dark:bg-white/5 text-gray-500 font-medium">
+                             <th className="px-4 py-2 border-b border-gray-200 dark:border-white/10">Snapshot Name</th>
+                             <th className="px-4 py-2 border-b border-gray-200 dark:border-white/10">Created Date</th>
+                             <th className="px-4 py-2 border-b border-gray-200 dark:border-white/10 text-right">State Size</th>
+                           </tr>
+                         </thead>
+                         <tbody>
+                           {snapshots.snapshots.map((snap) => (
+                             <tr key={snap.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group">
+                               <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
+                                 <div className="flex items-center gap-3">
+                                   <div className="h-2 w-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                   <span className="font-medium">{snap.name}</span>
+                                 </div>
+                               </td>
+                               <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5 text-gray-500">
+                                 {new Date(snap["date-sec"] * 1000).toLocaleString()}
+                               </td>
+                               <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5 text-right font-mono text-xs text-gray-400">
+                                 {(snap["vm-state-size"] / 1024 / 1024).toFixed(1)} MB
+                               </td>
+                             </tr>
+                           ))}
+                         </tbody>
+                       </table>
+                     </div>
                    )}
                    
-                   <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-                     <h4 className="text-sm font-semibold mb-2">Disk Info</h4>
-                     <div className="text-xs font-mono bg-gray-50 dark:bg-gray-900 p-2 rounded">
-                       <p>Format: {snapshots.format}</p>
-                       <p>Virtual Size: {(snapshots["virtual-size"] / 1024 / 1024 / 1024).toFixed(2)} GB</p>
-                       <p>Actual Size: {(snapshots["actual-size"] / 1024 / 1024).toFixed(2)} MB</p>
+                   <div className="mt-10 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/10 rounded-xl">
+                     <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Disk Metadata</h4>
+                     <div className="grid grid-cols-2 gap-4 text-[12px]">
+                       <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
+                         <span className="text-gray-500">Format</span>
+                         <span className="font-mono">{snapshots.format}</span>
+                       </div>
+                       <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
+                         <span className="text-gray-500">Virtual Size</span>
+                         <span className="font-mono">{(snapshots["virtual-size"] / 1024 / 1024 / 1024).toFixed(2)} GB</span>
+                       </div>
+                       <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
+                         <span className="text-gray-500">Actual Size</span>
+                         <span className="font-mono">{(snapshots["actual-size"] / 1024 / 1024).toFixed(1)} MB</span>
+                       </div>
+                       <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
+                         <span className="text-gray-500">Cluster Size</span>
+                         <span className="font-mono">{(snapshots["cluster-size"] / 1024).toFixed(0)} KB</span>
+                       </div>
                      </div>
                    </div>
                 </div>
@@ -120,8 +188,9 @@ function App() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            Select a Virtual Machine to view details
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400/50">
+            <svg className="mb-4" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <p className="text-sm font-medium">Select a UTM Machine to manage snapshots</p>
           </div>
         )}
       </div>

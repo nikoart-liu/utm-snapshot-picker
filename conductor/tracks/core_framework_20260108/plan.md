@@ -18,6 +18,6 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: 前端 UI 与数据绑定' (Protocol in workflow.md)
 
 ## Phase 4: 最终打磨与安全检查
-- [ ] Task: 添加虚拟机运行状态检测逻辑 (防止在运行时操作快照)
-- [ ] Task: 完善错误处理与用户提示
+- [x] Task: 添加虚拟机运行状态检测逻辑 (防止在运行时操作快照) fedc6ee
+- [x] Task: 完善错误处理与用户提示 fedc6ee
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: 最终打磨与安全检查' (Protocol in workflow.md)

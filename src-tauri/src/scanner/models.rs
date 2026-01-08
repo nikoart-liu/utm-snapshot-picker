@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct UtmVirtualMachine {
     pub name: String,
     pub path: String,
+    pub is_running: bool,
 }

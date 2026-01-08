@@ -1,6 +1,7 @@
 export interface UtmVirtualMachine {
   name: string;
   path: string;
+  is_running: boolean;
 }
 
 export interface Snapshot {
