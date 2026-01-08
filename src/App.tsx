@@ -58,15 +58,20 @@ function App() {
   }
 
   async function selectVm(vm: UtmVirtualMachine) {
+    console.log("Select VM:", vm.path);
     setSelectedVm(vm);
     setSnapshots(null);
     setSelectedSnapshotId(null);
-    setHeadSnapshotIdState(null); // Reset head state while loading
+    setHeadSnapshotIdState(null); 
     
-    // Load persisted head ID
-    const savedHeadId = await getHeadSnapshotId(vm.path);
-    if (savedHeadId) {
-      setHeadSnapshotIdState(savedHeadId);
+    try {
+      const savedHeadId = await getHeadSnapshotId(vm.path);
+      console.log("Loaded HEAD ID:", savedHeadId);
+      if (savedHeadId) {
+        setHeadSnapshotIdState(savedHeadId);
+      }
+    } catch (e) {
+      console.error("Error loading head ID:", e);
     }
 
     refreshSnapshots(vm.path);
@@ -105,9 +110,7 @@ function App() {
       
       const newInfo = await refreshSnapshots(selectedVm.path);
       
-      // Find the new snapshot to set as HEAD
       if (newInfo && newInfo.snapshots) {
-        // Assuming the new snapshot is the one with the matching name. 
         const newSnap = newInfo.snapshots.find(s => s.name === name);
         if (newSnap) {
           setHeadSnapshotIdState(newSnap.id);
@@ -126,7 +129,6 @@ function App() {
       await invoke("delete_snapshot", { vmPath: selectedVm.path, name: snapshotToDelete.name });
       showToast(`Snapshot deleted successfully.`);
       
-      // If we deleted the HEAD, clear the HEAD state
       if (snapshotToDelete.id === headSnapshotId) {
         setHeadSnapshotIdState(null);
         await setHeadSnapshotId(selectedVm.path, "");
@@ -149,7 +151,6 @@ function App() {
       await invoke("revert_snapshot", { vmPath: selectedVm.path, name: snapshotToRevert.name });
       showToast(`Reverted to snapshot successfully.`);
       
-      // Update HEAD to the reverted snapshot
       setHeadSnapshotIdState(snapshotToRevert.id);
       await setHeadSnapshotId(selectedVm.path, snapshotToRevert.id);
 

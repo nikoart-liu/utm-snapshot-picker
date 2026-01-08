@@ -1,11 +1,12 @@
 # 技术栈
 
-本项目将使用以下技术构建，旨在提供轻量、高效且具有 macOS 原生感的快照管理工具。
+本项目将使用以下技术构建，旨在提供 light-weight、高效且具有 macOS 原生感的快照管理工具。
 
 ## 核心架构
 - **框架**: [Tauri](https://tauri.app/) - 使用 Rust 构建后端，通过系统原生 WebView 渲染前端，确保极小的应用体积和优秀的性能。
 - **前端库**: [React](https://reactjs.org/) - 用于构建响应式和组件化的用户界面。
 - **编程语言**: [TypeScript](https://www.typescriptlang.org/) - 为前端开发提供类型安全，提高代码质量和可维护性。
+- **状态管理**: 基于 Rust 侧 Mutex + HashMap 实现的自定义持久化 KV 存储。
 
 ## 后端与系统集成
 - **Rust**: 处理底层系统调用、文件系统操作以及执行 `qemu-img` 命令。

@@ -1,16 +1,9 @@
-import { Store } from "@tauri-apps/plugin-store";
-
-// Initialize the store
-// We use a singleton pattern to ensure we're always using the same store instance
-export const store = new Store("snapshot-head-tracking.json");
-
-export interface HeadTrackingState {
-  [vmPath: string]: string; // snapshotId
-}
+import { invoke } from "@tauri-apps/api/core";
 
 export async function getHeadSnapshotId(vmPath: string): Promise<string | null> {
   try {
-    const val = await store.get<string>(vmPath);
+    const val = await invoke<string | null>("get_head_id", { vmPath });
+    console.log(`[Store] Get ${vmPath} = ${val}`);
     return val || null;
   } catch (e) {
     console.error("Failed to get head snapshot ID:", e);
@@ -20,8 +13,8 @@ export async function getHeadSnapshotId(vmPath: string): Promise<string | null> 
 
 export async function setHeadSnapshotId(vmPath: string, snapshotId: string): Promise<void> {
   try {
-    await store.set(vmPath, snapshotId);
-    await store.save();
+    console.log(`[Store] Set ${vmPath} = ${snapshotId}`);
+    await invoke("set_head_id", { vmPath, snapshotId });
   } catch (e) {
     console.error("Failed to set head snapshot ID:", e);
   }
