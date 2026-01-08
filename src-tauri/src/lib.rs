@@ -53,6 +53,14 @@ fn find_main_disk(vm_path: &str) -> Option<PathBuf> {
     None
 }
 
+fn ensure_vm_stopped(vm_path: &str) -> Result<(), String> {
+    let path = PathBuf::from(vm_path);
+    if scanner::scanner::check_if_vm_running(&path) {
+        return Err("Operation aborted: Virtual machine is currently running. Please stop it and try again.".to_string());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn get_snapshots(vm_path: String) -> Result<ImageInfo, String> {
     match find_main_disk(&vm_path) {
@@ -63,6 +71,7 @@ fn get_snapshots(vm_path: String) -> Result<ImageInfo, String> {
 
 #[tauri::command]
 fn create_snapshot(vm_path: String, name: String) -> Result<(), String> {
+    ensure_vm_stopped(&vm_path)?;
     match find_main_disk(&vm_path) {
         Some(disk_path) => qemu::commands::create_snapshot(&name, &disk_path),
         None => Err(format!("No .qcow2 disk found in VM bundle at {:?}", vm_path))
@@ -71,6 +80,8 @@ fn create_snapshot(vm_path: String, name: String) -> Result<(), String> {
 
 #[tauri::command]
 fn delete_snapshot(vm_path: String, name: String) -> Result<(), String> {
+    // Delete technically might work while running, but safer to block
+    ensure_vm_stopped(&vm_path)?;
     match find_main_disk(&vm_path) {
         Some(disk_path) => qemu::commands::delete_snapshot(&name, &disk_path),
         None => Err(format!("No .qcow2 disk found in VM bundle at {:?}", vm_path))
@@ -79,6 +90,7 @@ fn delete_snapshot(vm_path: String, name: String) -> Result<(), String> {
 
 #[tauri::command]
 fn revert_snapshot(vm_path: String, name: String) -> Result<(), String> {
+    ensure_vm_stopped(&vm_path)?;
     match find_main_disk(&vm_path) {
         Some(disk_path) => qemu::commands::revert_snapshot(&name, &disk_path),
         None => Err(format!("No .qcow2 disk found in VM bundle at {:?}", vm_path))

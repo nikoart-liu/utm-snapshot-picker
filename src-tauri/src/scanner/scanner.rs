@@ -25,7 +25,7 @@ pub fn scan_utm_vms(base_path: &Path) -> Vec<UtmVirtualMachine> {
     vms
 }
 
-fn check_if_vm_running(vm_path: &Path) -> bool {
+pub fn check_if_vm_running(vm_path: &Path) -> bool {
     // UTM standard disk location search
     let search_paths = vec![
         vm_path.join("Data"),

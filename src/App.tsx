@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { UtmVirtualMachine, ImageInfo, Snapshot } from "./types";
 import { CreateSnapshotModal } from "./CreateSnapshotModal";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { Toast } from "./Toast";
 
 function App() {
   const [vms, setVms] = useState<UtmVirtualMachine[]>([]);
@@ -20,6 +21,17 @@ function App() {
   // Selection
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
 
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; isVisible: boolean; type?: 'success' | 'error' }>({
+    message: "",
+    isVisible: false,
+    type: 'success',
+  });
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, isVisible: true, type });
+  }, []);
+
   useEffect(() => {
     loadVms();
   }, []);
@@ -29,6 +41,13 @@ function App() {
       setLoading(true);
       const result = await invoke<UtmVirtualMachine[]>("scan_vms");
       setVms(result);
+      // Update selected VM status if it exists in the list
+      if (selectedVm) {
+        const updatedSelected = result.find(v => v.path === selectedVm.path);
+        if (updatedSelected) {
+          setSelectedVm(updatedSelected);
+        }
+      }
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -57,10 +76,25 @@ function App() {
     }
   }
 
+  async function handleError(e: unknown) {
+    const errorMsg = String(e);
+    if (errorMsg.includes("Virtual machine is currently running")) {
+      showToast("Operation blocked: VM is running. Please stop it.", "error");
+      await loadVms(); // Refresh VM list to update status
+    } else {
+      setError(errorMsg);
+    }
+  }
+
   async function handleCreateSnapshot(name: string) {
     if (!selectedVm) return;
-    await invoke("create_snapshot", { vmPath: selectedVm.path, name });
-    await refreshSnapshots(selectedVm.path);
+    try {
+      await invoke("create_snapshot", { vmPath: selectedVm.path, name });
+      showToast(`Snapshot "${name}" created successfully.`);
+      await refreshSnapshots(selectedVm.path);
+    } catch (e) {
+      await handleError(e);
+    }
   }
 
   async function handleDeleteSnapshot() {
@@ -68,11 +102,12 @@ function App() {
     try {
       setLoading(true);
       await invoke("delete_snapshot", { vmPath: selectedVm.path, name: snapshotToDelete.name });
+      showToast(`Snapshot deleted successfully.`);
       setSnapshotToDelete(null);
       setSelectedSnapshotId(null);
       await refreshSnapshots(selectedVm.path);
     } catch (e) {
-      setError(String(e));
+      await handleError(e);
     } finally {
       setLoading(false);
     }
@@ -83,10 +118,11 @@ function App() {
     try {
       setLoading(true);
       await invoke("revert_snapshot", { vmPath: selectedVm.path, name: snapshotToRevert.name });
+      showToast(`Reverted to snapshot successfully.`);
       setSnapshotToRevert(null);
       await refreshSnapshots(selectedVm.path);
     } catch (e) {
-      setError(String(e));
+      await handleError(e);
     } finally {
       setLoading(false);
     }
@@ -149,7 +185,7 @@ function App() {
                       ? "bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed" 
                       : "bg-blue-500 hover:bg-blue-600 text-white"
                   }`}
-                  title={selectedVm.is_running ? "Cannot create snapshot while VM is running" : "Create Snapshot"}
+                  title={selectedVm.is_running ? "Please shut down the virtual machine before managing snapshots." : "Create Snapshot"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   New
@@ -242,11 +278,11 @@ function App() {
                        </div>
                        <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
                          <span className="text-gray-500">Actual Size</span>
-                         <span className="font-mono">{(snapshots["actual-size"] / 1024 / 1024).toFixed(1)} MB</span>
+                         <span className="font-mono">{(snapshots["actual-size"] ? (snapshots["actual-size"] / 1024 / 1024).toFixed(1) : "0.0")} MB</span>
                        </div>
                        <div className="flex justify-between border-b border-gray-200 dark:border-white/5 pb-1.5">
                          <span className="text-gray-500">Cluster Size</span>
-                         <span className="font-mono">{(snapshots["cluster-size"] / 1024).toFixed(0)} KB</span>
+                         <span className="font-mono">{(snapshots["cluster-size"] ? (snapshots["cluster-size"] / 1024).toFixed(0) : "0")} KB</span>
                        </div>
                      </div>
                    </div>
@@ -269,7 +305,7 @@ function App() {
                           ? "text-gray-400 cursor-not-allowed" 
                           : "text-gray-700 dark:text-gray-200 hover:text-blue-500"
                      }`}
-                     title={selectedVm?.is_running ? "Cannot revert while VM is running" : "Revert to this snapshot"}
+                     title={selectedVm?.is_running ? "Please shut down the virtual machine before managing snapshots." : "Revert to this snapshot"}
                    >
                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                      Revert
@@ -320,6 +356,13 @@ function App() {
         confirmLabel="Revert"
         onConfirm={handleRevertSnapshot}
         onCancel={() => setSnapshotToRevert(null)}
+      />
+
+      <Toast 
+        message={toast.message}
+        isVisible={toast.isVisible}
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
       />
     </div>
   );
