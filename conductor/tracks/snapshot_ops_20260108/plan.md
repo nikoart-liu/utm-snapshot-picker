@@ -1,7 +1,7 @@
 # Track Plan: 实现创建快照、删除快照、回滚快照功能
 
 ## Phase 1: 后端 Rust 指令扩展
-- [ ] Task: 编写创建、删除、回滚快照的 Rust 单元测试
+- [x] Task: 编写创建、删除、回滚快照的 Rust 单元测试 20c0744
 - [ ] Task: 实现 `qemu::commands` 中的快照操作函数 (封装 `qemu-img snapshot`)
 - [ ] Task: 建立 Tauri 命令 (Command) 供前端调用
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 后端 Rust 指令扩展' (Protocol in workflow.md)
