@@ -3,6 +3,7 @@ pub mod scanner;
 pub mod qemu;
 
 use std::path::PathBuf;
+use std::fs;
 use crate::scanner::models::UtmVirtualMachine;
 use crate::qemu::models::ImageInfo;
 
@@ -25,13 +26,47 @@ fn scan_vms() -> Result<Vec<UtmVirtualMachine>, String> {
 
 #[tauri::command]
 fn get_snapshots(vm_path: String) -> Result<ImageInfo, String> {
-    let disk_path = PathBuf::from(&vm_path).join("Data/Images/disk-0.qcow2");
+    let images_path = PathBuf::from(&vm_path).join("Data");
     
-    if !disk_path.exists() {
-        return Err(format!("Main disk not found at {:?}", disk_path));
+    // Fallback: try Data/Images if Data/ doesn't have qcow2 directly (older structure)
+    // Actually UTM structure is usually Data/Images/disk-0.qcow2 but let's be flexible
+    let search_paths = vec![
+        images_path.clone(), 
+        images_path.join("Images"),
+        PathBuf::from(&vm_path).join("Images")
+    ];
+
+    let mut found_disk = None;
+
+    for path in search_paths {
+        if let Ok(entries) = fs::read_dir(&path) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if let Some(ext) = p.extension() {
+                    if ext == "qcow2" {
+                        found_disk = Some(p);
+                        break;
+                    }
+                }
+            }
+        }
+        if found_disk.is_some() {
+            break;
+        }
     }
     
-    qemu::commands::get_image_info(&disk_path)
+    // Last resort: check strictly for disk-0.qcow2 in standard location if search failed
+    if found_disk.is_none() {
+         let standard = PathBuf::from(&vm_path).join("Data/Images/disk-0.qcow2");
+         if standard.exists() {
+             found_disk = Some(standard);
+         }
+    }
+
+    match found_disk {
+        Some(disk_path) => qemu::commands::get_image_info(&disk_path),
+        None => Err(format!("No .qcow2 disk found in VM bundle at {:?}", vm_path))
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

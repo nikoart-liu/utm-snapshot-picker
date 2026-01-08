@@ -5,6 +5,7 @@ use crate::qemu::models::ImageInfo;
 pub fn get_image_info(disk_path: &Path) -> Result<ImageInfo, String> {
     let output = Command::new("qemu-img")
         .arg("info")
+        .arg("--force-share") // Allow reading info even if VM is running
         .arg("--output=json")
         .arg(disk_path)
         .output()
