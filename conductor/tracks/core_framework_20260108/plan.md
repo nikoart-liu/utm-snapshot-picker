@@ -1,7 +1,7 @@
 # Track Plan: 搭建核心应用框架并实现基础快照列表展示
 
 ## Phase 1: 项目初始化与环境搭建
-- [ ] Task: 初始化 Tauri 项目 (React + TypeScript)
+- [x] Task: 初始化 Tauri 项目 (React + TypeScript) fb19aa0
 - [ ] Task: 配置 Tailwind CSS 并设置 macOS 原生风格的基础样式
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 项目初始化与环境搭建' (Protocol in workflow.md)
 
