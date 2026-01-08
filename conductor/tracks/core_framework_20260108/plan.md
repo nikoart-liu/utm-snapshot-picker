@@ -6,15 +6,15 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 项目初始化与环境搭建' (Protocol in workflow.md)
 
 ## Phase 2: 后端逻辑实现 (Rust)
-- [~] Task: 实现扫描 `.utm` 虚拟机的 Rust 函数
-- [ ] Task: 实现封装 `qemu-img info` 命令以获取快照 JSON 数据
-- [ ] Task: 建立 Tauri 命令 (Command) 供前端调用
+- [x] Task: 实现扫描 `.utm` 虚拟机的 Rust 函数 55653af
+- [x] Task: 实现封装 `qemu-img info` 命令以获取快照 JSON 数据
+- [x] Task: 建立 Tauri 命令 (Command) 供前端调用
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: 后端逻辑实现 (Rust)' (Protocol in workflow.md)
 
 ## Phase 3: 前端 UI 与数据绑定
-- [ ] Task: 构建虚拟机列表界面
-- [ ] Task: 实现快照分层列表组件
-- [ ] Task: 实现前端调用后端命令获取并展示真实数据
+- [x] Task: 构建虚拟机列表界面
+- [x] Task: 实现快照分层列表组件
+- [x] Task: 实现前端调用后端命令获取并展示真实数据
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: 前端 UI 与数据绑定' (Protocol in workflow.md)
 
 ## Phase 4: 最终打磨与安全检查
