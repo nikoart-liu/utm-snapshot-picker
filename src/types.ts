@@ -9,15 +9,15 @@ export interface Snapshot {
   name: string;
   "vm-state-size": number;
   "date-sec": number;
-  "clock-sec": number;
-  "vm-clock-sec": number;
+  "clock-sec"?: number;
+  "vm-clock-sec"?: number;
 }
 
 export interface ImageInfo {
   "virtual-size": number;
   filename: string;
-  "cluster-size": number;
+  "cluster-size"?: number;
   format: string;
-  "actual-size": number;
+  "actual-size"?: number;
   snapshots?: Snapshot[];
 }

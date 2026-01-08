@@ -9,9 +9,9 @@ pub struct Snapshot {
     #[serde(rename = "date-sec")]
     pub date_sec: u64,
     #[serde(rename = "clock-sec")]
-    pub clock_sec: u64,
+    pub clock_sec: Option<u64>,
     #[serde(rename = "vm-clock-sec")]
-    pub vm_clock_sec: u64,
+    pub vm_clock_sec: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,9 +20,9 @@ pub struct ImageInfo {
     pub virtual_size: u64,
     pub filename: String,
     #[serde(rename = "cluster-size")]
-    pub cluster_size: u64,
+    pub cluster_size: Option<u64>, // cluster-size might also be missing in some contexts
     pub format: String,
     #[serde(rename = "actual-size")]
-    pub actual_size: u64,
+    pub actual_size: Option<u64>, // actual-size can be missing
     pub snapshots: Option<Vec<Snapshot>>,
 }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
-import { UtmVirtualMachine, ImageInfo } from "./types";
+import { UtmVirtualMachine, ImageInfo, Snapshot } from "./types";
+import { CreateSnapshotModal } from "./CreateSnapshotModal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 function App() {
   const [vms, setVms] = useState<UtmVirtualMachine[]>([]);
@@ -9,6 +11,14 @@ function App() {
   const [snapshots, setSnapshots] = useState<ImageInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Dialog states
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [snapshotToDelete, setSnapshotToDelete] = useState<Snapshot | null>(null);
+  const [snapshotToRevert, setSnapshotToRevert] = useState<Snapshot | null>(null);
+  
+  // Selection
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
 
   useEffect(() => {
     loadVms();
@@ -30,6 +40,7 @@ function App() {
   async function selectVm(vm: UtmVirtualMachine) {
     setSelectedVm(vm);
     setSnapshots(null);
+    setSelectedSnapshotId(null);
     refreshSnapshots(vm.path);
   }
 
@@ -39,6 +50,41 @@ function App() {
       const result = await invoke<ImageInfo>("get_snapshots", { vmPath: path });
       setSnapshots(result);
       setError(null);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateSnapshot(name: string) {
+    if (!selectedVm) return;
+    await invoke("create_snapshot", { vmPath: selectedVm.path, name });
+    await refreshSnapshots(selectedVm.path);
+  }
+
+  async function handleDeleteSnapshot() {
+    if (!selectedVm || !snapshotToDelete) return;
+    try {
+      setLoading(true);
+      await invoke("delete_snapshot", { vmPath: selectedVm.path, name: snapshotToDelete.name });
+      setSnapshotToDelete(null);
+      setSelectedSnapshotId(null);
+      await refreshSnapshots(selectedVm.path);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRevertSnapshot() {
+    if (!selectedVm || !snapshotToRevert) return;
+    try {
+      setLoading(true);
+      await invoke("revert_snapshot", { vmPath: selectedVm.path, name: snapshotToRevert.name });
+      setSnapshotToRevert(null);
+      await refreshSnapshots(selectedVm.path);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -96,11 +142,24 @@ function App() {
               </div>
               <div className="flex gap-2">
                 <button 
-                  onClick={() => refreshSnapshots(selectedVm.path)}
-                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 rounded-md transition-all active:scale-95 flex items-center gap-1.5"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  disabled={selectedVm.is_running}
+                  className={`px-2 py-1 text-xs rounded-md transition-all active:scale-95 flex items-center gap-1.5 shadow-sm ${
+                    selectedVm.is_running 
+                      ? "bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed" 
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  }`}
+                  title={selectedVm.is_running ? "Cannot create snapshot while VM is running" : "Create Snapshot"}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                  Refresh
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  New
+                </button>
+                <button 
+                  onClick={() => refreshSnapshots(selectedVm.path)}
+                  className="px-2 py-1 text-xs bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 rounded-md transition-all active:scale-95 flex items-center gap-1.5"
+                  title="Refresh"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                 </button>
               </div>
             </div>
@@ -110,7 +169,7 @@ function App() {
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-[13px] flex items-start gap-3">
                   <svg className="shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <div>
-                    <p className="font-semibold">Error retrieving snapshots</p>
+                    <p className="font-semibold">Error</p>
                     <p className="opacity-80 mt-1">{error}</p>
                   </div>
                 </div>
@@ -119,7 +178,7 @@ function App() {
               {loading && !snapshots && <div className="text-sm text-gray-400 flex items-center gap-2 animate-pulse"><div className="h-2 w-2 bg-gray-400 rounded-full"></div>Loading details...</div>}
 
               {snapshots && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-20">
                    <div className="flex justify-between items-end mb-4">
                      <h3 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Snapshots History</h3>
                      <span className="text-[11px] text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{snapshots.snapshots?.length || 0} Total</span>
@@ -142,10 +201,18 @@ function App() {
                          </thead>
                          <tbody>
                            {snapshots.snapshots.map((snap) => (
-                             <tr key={snap.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group">
+                             <tr 
+                               key={snap.id} 
+                               onClick={() => setSelectedSnapshotId(snap.id)}
+                               className={`transition-colors cursor-default ${
+                                 selectedSnapshotId === snap.id 
+                                   ? "bg-blue-50 dark:bg-blue-500/10" 
+                                   : "hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                               }`}
+                             >
                                <td className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
                                  <div className="flex items-center gap-3">
-                                   <div className="h-2 w-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                   <div className={`h-2 w-2 rounded-full transition-opacity ${selectedSnapshotId === snap.id ? "bg-blue-500 opacity-100" : "bg-gray-300 opacity-0"}`}></div>
                                    <span className="font-medium">{snap.name}</span>
                                  </div>
                                </td>
@@ -186,6 +253,41 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Action Bar */}
+            {selectedSnapshotId && snapshots?.snapshots && (
+               <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+                 <div className="bg-white dark:bg-[#333] border border-gray-200 dark:border-black/50 shadow-lg rounded-full px-4 py-2 flex items-center gap-4 animate-in slide-in-from-bottom-4 duration-200">
+                   <button 
+                     onClick={() => {
+                       const snap = snapshots.snapshots?.find(s => s.id === selectedSnapshotId);
+                       if (snap) setSnapshotToRevert(snap);
+                     }}
+                     disabled={selectedVm?.is_running}
+                     className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                        selectedVm?.is_running 
+                          ? "text-gray-400 cursor-not-allowed" 
+                          : "text-gray-700 dark:text-gray-200 hover:text-blue-500"
+                     }`}
+                     title={selectedVm?.is_running ? "Cannot revert while VM is running" : "Revert to this snapshot"}
+                   >
+                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                     Revert
+                   </button>
+                   <div className="w-px h-4 bg-gray-200 dark:bg-white/10"></div>
+                   <button 
+                     onClick={() => {
+                        const snap = snapshots.snapshots?.find(s => s.id === selectedSnapshotId);
+                        if (snap) setSnapshotToDelete(snap);
+                     }}
+                     className="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
+                   >
+                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                     Delete
+                   </button>
+                 </div>
+               </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400/50">
@@ -194,6 +296,31 @@ function App() {
           </div>
         )}
       </div>
+
+      <CreateSnapshotModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateSnapshot}
+      />
+
+      <ConfirmDialog 
+        isOpen={!!snapshotToDelete}
+        title="Delete Snapshot"
+        message={`Are you sure you want to delete snapshot "${snapshotToDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isDestructive={true}
+        onConfirm={handleDeleteSnapshot}
+        onCancel={() => setSnapshotToDelete(null)}
+      />
+
+      <ConfirmDialog 
+        isOpen={!!snapshotToRevert}
+        title="Revert to Snapshot"
+        message={`Are you sure you want to revert "${selectedVm?.name}" to snapshot "${snapshotToRevert?.name}"? Current state will be lost.`}
+        confirmLabel="Revert"
+        onConfirm={handleRevertSnapshot}
+        onCancel={() => setSnapshotToRevert(null)}
+      />
     </div>
   );
 }
