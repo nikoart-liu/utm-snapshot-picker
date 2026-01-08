@@ -1,0 +1,8 @@
+{
+  "track_id": "toast_feedback_20260108",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-08T16:05:00Z",
+  "updated_at": "2026-01-08T16:05:00Z",
+  "description": "在虚拟机开机时，优化快照相关操作的友好提示，并且操作成功同样需要一个友好提示"
+}
