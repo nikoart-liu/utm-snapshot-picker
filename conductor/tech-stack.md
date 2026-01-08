@@ -12,8 +12,12 @@
 - **Shell 执行**: 通过 Tauri 的 `shell` 插件安全地调用外部 `qemu-img` 二进制文件。
 
 ## UI 与样式
-- **CSS 框架**: [Tailwind CSS](https://tailwindcss.com/) - 用于快速实现极简风格的布局。
+- **CSS 框架**: [Tailwind CSS v4](https://tailwindcss.com/) - 用于快速实现极简风格的布局。
 - **组件库**: 优先使用模拟 macOS 原生风格的 CSS 样式，确保视觉上的一致性。
+
+## 测试与质量
+- **前端测试**: [Vitest](https://vitest.dev/) + React Testing Library。
+- **后端测试**: Rust 原生测试框架 + `tempfile`。
 
 ## 外部依赖
 - **qemu-img**: 必须安装在系统中，用于执行实际的快照创建、回滚和管理操作。
