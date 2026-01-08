@@ -2,7 +2,7 @@
 
 ## Phase 1: 项目初始化与环境搭建
 - [x] Task: 初始化 Tauri 项目 (React + TypeScript) fb19aa0
-- [ ] Task: 配置 Tailwind CSS 并设置 macOS 原生风格的基础样式
+- [~] Task: 配置 Tailwind CSS 并设置 macOS 原生风格的基础样式
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 项目初始化与环境搭建' (Protocol in workflow.md)
 
 ## Phase 2: 后端逻辑实现 (Rust)
