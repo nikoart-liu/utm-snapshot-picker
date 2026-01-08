@@ -22,6 +22,33 @@ pub fn get_image_info(disk_path: &Path) -> Result<ImageInfo, String> {
     Ok(info)
 }
 
+pub fn build_snapshot_create_args(name: &str, disk_path: &Path) -> Vec<String> {
+    vec![
+        "snapshot".to_string(),
+        "-c".to_string(),
+        name.to_string(),
+        disk_path.to_string_lossy().to_string(),
+    ]
+}
+
+pub fn build_snapshot_delete_args(name: &str, disk_path: &Path) -> Vec<String> {
+    vec![
+        "snapshot".to_string(),
+        "-d".to_string(),
+        name.to_string(),
+        disk_path.to_string_lossy().to_string(),
+    ]
+}
+
+pub fn build_snapshot_revert_args(name: &str, disk_path: &Path) -> Vec<String> {
+    vec![
+        "snapshot".to_string(),
+        "-a".to_string(),
+        name.to_string(),
+        disk_path.to_string_lossy().to_string(),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
