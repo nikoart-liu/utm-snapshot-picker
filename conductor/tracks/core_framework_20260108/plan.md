@@ -17,7 +17,7 @@
 - [x] Task: 实现前端调用后端命令获取并展示真实数据 618e77c
 - [x] Task: Conductor - User Manual Verification 'Phase 3: 前端 UI 与数据绑定' (Protocol in workflow.md)
 
-## Phase 4: 最终打磨与安全检查
+## Phase 4: 最终打磨与安全检查 [checkpoint: c1f4c18]
 - [x] Task: 添加虚拟机运行状态检测逻辑 (防止在运行时操作快照) fedc6ee
 - [x] Task: 完善错误处理与用户提示 fedc6ee
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: 最终打磨与安全检查' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: 最终打磨与安全检查' (Protocol in workflow.md)
