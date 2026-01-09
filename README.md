@@ -1,6 +1,6 @@
-# Tauri + React + Typescript
+# UTM Snapshot Picker
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+This project is a snapshot manager for UTM virtual machines.
 
 ## Recommended IDE Setup
 
