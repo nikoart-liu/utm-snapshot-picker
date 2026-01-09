@@ -1,9 +1,9 @@
 # Track Plan: 虚拟机列表手动刷新功能 (VM List Manual Refresh)
 
-## Phase 1: 行为修改与状态清理
+## Phase 1: 行为修改与状态清理 [checkpoint: b8157a3]
 - [x] Task: 修改 `loadVms` 函数逻辑，支持在手动刷新时强制清除 `selectedVm` 状态 d03e2f7
 - [x] Task: 编写单元测试验证手动刷新操作后，当前选中的虚拟机及其关联状态（快照列表等）已被正确清空 d03e2f7
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: 行为修改与状态清理' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: 行为修改与状态清理' (Protocol in workflow.md) b8157a3
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 行为修改与状态清理' (Protocol in workflow.md)
 
 ## Phase 2: UI 视觉反馈与交互优化
