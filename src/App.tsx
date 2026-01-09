@@ -177,10 +177,17 @@ function App() {
           <h2 className="font-bold text-xs text-gray-500 uppercase tracking-widest">UTM Machines</h2>
           <button 
             onClick={() => loadVms(true)}
-            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-gray-500"
+            disabled={loading}
+            className={`p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-gray-500 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
             title="Refresh list"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            <svg 
+              className={loading ? "animate-spin" : ""} 
+              xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+            </svg>
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">

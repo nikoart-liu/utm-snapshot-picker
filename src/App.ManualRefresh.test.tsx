@@ -47,3 +47,40 @@ test('clears selected VM on manual refresh', async () => {
   // VM 1 header should no longer be visible
   expect(screen.queryByRole('heading', { level: 1, name: 'VM 1' })).not.toBeInTheDocument();
 });
+
+test('refresh button shows loading animation and is disabled during refresh', async () => {
+  let resolveScan: (value: any) => void;
+  const scanPromise = new Promise((resolve) => {
+    resolveScan = resolve;
+  });
+
+  (invoke as any).mockImplementation((cmd: string) => {
+    if (cmd === 'scan_vms') return scanPromise;
+    return Promise.resolve(null);
+  });
+
+  await act(async () => {
+    render(<App />);
+  });
+
+  const refreshButton = screen.getByTitle('Refresh list');
+  const svg = refreshButton.querySelector('svg');
+
+  // Trigger refresh
+  fireEvent.click(refreshButton);
+
+  // Verify loading state (button disabled, svg has animate-spin)
+  // We don't need 'await act' for the immediate state check if the promise is pending
+  expect(refreshButton).toBeDisabled();
+  expect(svg).toHaveClass('animate-spin');
+
+  // Resolve the promise to finish refresh
+  await act(async () => {
+    resolveScan!([]);
+  });
+
+  // Verify loading state is cleared
+  expect(refreshButton).not.toBeDisabled();
+  expect(svg).not.toHaveClass('animate-spin');
+});
+
