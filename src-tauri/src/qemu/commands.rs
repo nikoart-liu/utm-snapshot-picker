@@ -1,9 +1,30 @@
 use std::process::Command;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use crate::qemu::models::ImageInfo;
 
+fn find_qemu_img_path() -> PathBuf {
+    // Check common locations on macOS
+    let common_paths = vec![
+        "/opt/homebrew/bin/qemu-img",   // Apple Silicon Homebrew
+        "/usr/local/bin/qemu-img",      // Intel Homebrew
+        "/usr/bin/qemu-img",            // System
+        "/bin/qemu-img",
+    ];
+
+    for path in common_paths {
+        let p = PathBuf::from(path);
+        if p.exists() {
+            return p;
+        }
+    }
+
+    // Fallback to searching in PATH (works in dev mode usually)
+    PathBuf::from("qemu-img")
+}
+
 pub fn get_image_info(disk_path: &Path) -> Result<ImageInfo, String> {
-    let output = Command::new("qemu-img")
+    let qemu_path = find_qemu_img_path();
+    let output = Command::new(qemu_path)
         .arg("info")
         .arg("--force-share") // Allow reading info even if VM is running
         .arg("--output=json")
@@ -38,7 +59,8 @@ pub fn revert_snapshot(name: &str, disk_path: &Path) -> Result<(), String> {
 }
 
 fn run_qemu_img_command(args: &[String]) -> Result<(), String> {
-    let output = Command::new("qemu-img")
+    let qemu_path = find_qemu_img_path();
+    let output = Command::new(qemu_path)
         .args(args)
         .output()
         .map_err(|e| format!("Failed to execute qemu-img: {}", e))?;
@@ -80,7 +102,4 @@ pub fn build_snapshot_revert_args(name: &str, disk_path: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // mocking command execution is hard in pure unit tests without abstraction, 
-    // but we can test the parsing logic if we separate it. 
-    // For now, we trust the integration or end-to-end tests later since we can't run shell tests anyway.
 }

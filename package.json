@@ -1,5 +1,6 @@
 {
-  "name": "tauri-app",
+  "name": "utm-snapshot-picker",
+  "description": "A macOS utility for managing UTM virtual machine snapshots using qemu-img.",
   "private": true,
   "version": "0.1.0",
   "type": "module",
