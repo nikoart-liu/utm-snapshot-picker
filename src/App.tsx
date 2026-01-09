@@ -38,12 +38,18 @@ function App() {
     loadVms();
   }, []);
 
-  async function loadVms() {
+  async function loadVms(manualRefresh = false) {
     try {
       setLoading(true);
       const result = await invoke<UtmVirtualMachine[]>("scan_vms");
       setVms(result);
-      if (selectedVm) {
+      
+      if (manualRefresh) {
+        setSelectedVm(null);
+        setSnapshots(null);
+        setSelectedSnapshotId(null);
+        setHeadSnapshotIdState(null);
+      } else if (selectedVm) {
         const updatedSelected = result.find(v => v.path === selectedVm.path);
         if (updatedSelected) {
           setSelectedVm(updatedSelected);
@@ -170,7 +176,7 @@ function App() {
         <div className="p-4 pt-10 border-b border-gray-300 dark:border-white/10 flex justify-between items-center">
           <h2 className="font-bold text-xs text-gray-500 uppercase tracking-widest">UTM Machines</h2>
           <button 
-            onClick={loadVms}
+            onClick={() => loadVms(true)}
             className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-gray-500"
             title="Refresh list"
           >
